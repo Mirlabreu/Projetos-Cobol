@@ -1,0 +1,358 @@
+      *---------------------------------------------------------------*
+      *OBJETIVO DO PROGRAMA: UNIFICAR O CADASTRO DE CLIENTES QUE      *
+      *                      ATUALMENTE ESTA DIVIDO EM 3 ARQUIVOS     *
+      *---------------------------------------------------------------*
+       IDENTIFICATION                      DIVISION.
+      *---------------------------------------------------------------*
+       PROGRAM-ID.                         GPAZ9904.
+       AUTHOR.                             KETRUS.
+       DATE-WRITTEN.                       31/05/2021.
+       DATE-COMPILED.                      04/05/2021.
+       SECURITY.                           NENHUM.
+      *---------------------------------------------------------------*
+       ENVIRONMENT                         DIVISION.
+      *---------------------------------------------------------------*
+       CONFIGURATION                       SECTION.
+       SOURCE-COMPUTER.                    NOTEMIRLA.
+       OBJECT-COMPUTER.                    NOTEMIRLA.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+       INPUT-OUTPUT                        SECTION.
+
+      *ETAPA 1 : ESPECIFICACAO DOS ARQUIVOS DE ENTRADA E SAIDA
+
+       FILE-CONTROL.
+           SELECT CLISP ASSIGN             TO UT-S-CLISP
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLISP
+           .
+
+           SELECT CLIRJ ASSIGN             TO UT-S-CLIRJ
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLIRJ
+           .
+
+           SELECT CLIMG ASSIGN             TO UT-S-CLIMG
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLIMG
+           .
+
+           SELECT CLIUNIF ASSIGN           TO UT-S-CLIUNIF
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLIUNIF
+           .
+
+      *---------------------------------------------------------------*
+       DATA                                DIVISION.
+      *---------------------------------------------------------------*
+       FILE                                SECTION.
+      *---------------------------------------------------------------*
+      *ETAPA 2: DETALHAMENTO DOS ARQUIVOS DE ENTRADA E SAIDA
+
+      *ESSE COPY ARQCLI REPLACING, TRAS DA BOOKLIB AS VARIAVEIS
+      *REFENTES AOS DADOS DOS CLIENTES
+
+      *VARIAVEIS ORIGINAIS CLISP
+
+       FD  CLISP
+           LABEL RECORD STANDARD
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           RECORD CONTAINS 94 CHARACTERS
+           DATA RECORD IS REG-CLISP
+           .
+           COPY ARQCLI REPLACING ==:XX-:== BY ====
+                                 ==:YY:== BY ==SP==.
+
+      *VARIAVEIS ORIGINAIS CLIRJ
+
+       FD  CLIRJ
+           LABEL RECORD STANDARD
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           RECORD CONTAINS 94 CHARACTERS
+           DATA RECORD IS REG-CLIRJ
+           .
+           COPY ARQCLI REPLACING ==:XX-:== BY ====
+                                 ==:YY:== BY ==RJ==.
+
+
+      *VARIAVEIS ORIGINAIS CLIMG
+
+       FD  CLIMG
+           LABEL RECORD STANDARD
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           RECORD CONTAINS 94 CHARACTERS
+           DATA RECORD IS REG-CLIMG
+           .
+           COPY ARQCLI REPLACING ==:XX-:== BY ====
+                                 ==:YY:== BY ==MG==.
+
+      *VARIAVEIS ORIGINAIS CLIUNIF
+
+       FD  CLIUNIF
+           LABEL RECORD STANDARD
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           RECORD CONTAINS 94 CHARACTERS
+           DATA RECORD IS REG-CLIUNIF
+           .
+           COPY ARQCLI REPLACING ==:XX-:== BY ====
+                                 ==:YY:== BY ==UNIF==.
+
+      *---------------------------------------------------------------*
+       WORKING-STORAGE                     SECTION.
+      *---------------------------------------------------------------*
+      *VARIAVEIS ESPELHO CLISP
+
+       COPY ARQCLI REPLACING ==:XX-:== BY ==WS-==
+                             ==:YY:== BY ==SP==.
+
+      *VARIAVEIS ESPELHO CLIRJ
+
+       COPY ARQCLI REPLACING ==:XX-:== BY ==WS-==
+                             ==:YY:== BY ==RJ==.
+
+      *VARIAVEIS ESPELHO CLIMG
+
+       COPY ARQCLI REPLACING ==:XX-:== BY ==WS-==
+                             ==:YY:== BY ==MG==.
+
+      *VARIAVEIS ESPELHO CLIUNIF
+
+       COPY ARQCLI REPLACING ==:XX-:== BY ==WS-==
+                             ==:YY:== BY ==UNIF==.
+
+      *VARIAVEIS DE DATA VINDAS DA BOOKLIB
+
+       COPY VARDATA.
+
+      *VARIAVEIS DE TEMPO VINDAS DA BOOKLIB
+
+       COPY VARTEMP.
+
+      *VARIAVEIS DE MENSAGENS
+
+       77  WS-MSG                          PIC X(60).
+       77  WS-FS                           PIC X(02).
+
+      *VARIAVEIES DE CONTADORES DE REGISTROS LIDOS E GRAVADOS
+      *TIPO COMP
+
+       77  WS-CTLIDO-CLISP                 PIC 9(02) COMP.
+       77  WS-CTLIDO-CLIRJ                 PIC 9(02) COMP.
+       77  WS-CTLIDO-CLIMG                 PIC 9(02) COMP.
+       77  WS-CTGRAV-CLIUNIF               PIC 9(02) COMP.
+
+      *VARIAVEIS DE CONTADORES DE REGISTROS LIDOS E GRAVADOS
+      *COM MASCARA
+
+       77  WS-CTLIDO-CLISP-F               PIC ZZZ9.
+       77  WS-CTLIDO-CLIRJ-F               PIC ZZZ9.
+       77  WS-CTLIDO-CLIMG-F               PIC ZZZ9.
+       77  WS-CTGRAV-CLIUNIF-F             PIC ZZZ9.
+
+      *DECLARACAO DE VARIAVEIS DE FILE STATUS
+
+       77  FS-CLISP                        PIC X(02).
+       77  FS-CLIRJ                        PIC X(02).
+       77  FS-CLIMG                        PIC X(02).
+       77  FS-CLIUNIF                      PIC X(02).
+      *---------------------------------------------------------------*
+       LINKAGE                             SECTION.
+      *---------------------------------------------------------------*
+       PROCEDURE                           DIVISION.
+      *---------------------------------------------------------------*
+      *ETAPA 3: MANIPULACAO DOS ARQUIVOS DE ENTRADA E SAIDA
+
+       0000-GPAZ9904.
+           PERFORM 1000-INICIALIZAR.
+           PERFORM 2000-PROCESSAR UNTIL FS-CLISP = '10' AND
+                                        FS-CLIRJ = '10' AND
+                                        FS-CLIMG = '10'
+           PERFORM 3000-TERMINO.
+           STOP RUN
+           .
+
+       1000-INICIALIZAR.
+           ACCEPT WS-HORARIO-INICIO FROM TIME
+           MOVE 0                          TO WS-CTLIDO-CLISP
+                                              WS-CTLIDO-CLIRJ
+                                              WS-CTLIDO-CLIMG
+                                              WS-CTGRAV-CLIUNIF
+           OPEN INPUT CLISP
+           IF FS-CLISP NOT = '00'
+              MOVE 'ERRO NO ARQUIVO DE ABERTURA CLISP'
+                                           TO WS-MSG
+              MOVE FS-CLISP                TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+           OPEN INPUT CLIRJ
+           IF FS-CLIRJ NOT = '00'
+              MOVE 'ERRO DE ABERTURA ARQUIVO DO CLIRJ'
+                                           TO WS-MSG
+              MOVE FS-CLIRJ                TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+           OPEN INPUT CLIMG
+           IF FS-CLIMG NOT = '00'
+              MOVE 'ERRO DE ABERTURA DE ARQUIVO DO CLIMG'
+                                           TO WS-MSG
+              MOVE  FS-CLIMG               TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+           OPEN OUTPUT CLIUNIF
+           IF FS-CLIUNIF NOT = '00'
+              MOVE 'ERRO DE ABERTURA DE ARQUIVO DO CLIUNIF'
+                                           TO WS-MSG
+              MOVE FS-CLIUNIF              TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
+           PERFORM 1100-LER-CLISP
+           PERFORM 1200-LER-CLIRJ
+           PERFORM 1300-LER-CLIMG
+           .
+       1100-LER-CLISP.
+           READ CLISP INTO WS-REG-CLI-SP
+           IF FS-CLISP = '00'
+              ADD 1                        TO WS-CTLIDO-CLISP
+           ELSE
+              IF FS-CLISP = '10'
+                 MOVE HIGH-VALUES          TO WS-CPFCLI-SP
+              ELSE
+                 MOVE 'ERRO LEITURA DO ARQUIVO CLISP'
+                                           TO WS-MSG
+                 MOVE FS-CLISP             TO WS-FS
+                 GO                        TO 9999-ERRO
+              END-IF
+           END-IF
+           .
+       1200-LER-CLIRJ.
+           READ CLIRJ INTO WS-REG-CLI-RJ
+           IF FS-CLIRJ = '00'
+              ADD 1                        TO WS-CTLIDO-CLIRJ
+           ELSE
+              IF FS-CLIRJ = '10'
+                 MOVE HIGH-VALUES          TO WS-CPFCLI-RJ
+              ELSE
+                 MOVE 'ERRO LEITURA DO ARQ CLIRJ'
+                                           TO WS-MSG
+                 MOVE FS-CLIRJ             TO WS-FS
+                 GO                        TO 9999-ERRO
+              END-IF
+           END-IF
+           .
+       1300-LER-CLIMG.
+           READ CLIMG INTO WS-REG-CLI-MG
+           IF FS-CLIMG = '00'
+              ADD 1                        TO WS-CTLIDO-CLIMG
+           ELSE
+              IF FS-CLIMG = '10'
+                 MOVE HIGH-VALUES          TO WS-CPFCLI-MG
+              ELSE
+                 MOVE 'ERRO LEITURA DO ARQUIVO CLIMG'
+                                           TO WS-MSG
+                 MOVE FS-CLIMG             TO WS-FS
+                 GO                        TO 9999-ERRO
+              END-IF
+           END-IF
+           .
+       2000-PROCESSAR.
+           IF WS-CPFCLI-SP < WS-CPFCLI-RJ  AND
+              WS-CPFCLI-SP < WS-CPFCLI-MG
+              MOVE WS-REG-CLI-SP           TO WS-REG-CLI-UNIF
+              PERFORM 2100-GRAVAR-CLIUNIF
+              PERFORM 1100-LER-CLISP
+           ELSE
+              IF WS-CPFCLI-RJ < WS-CPFCLI-MG
+                 MOVE WS-REG-CLI-RJ        TO WS-REG-CLI-UNIF
+                 PERFORM 2100-GRAVAR-CLIUNIF
+                 PERFORM 1200-LER-CLIRJ
+              ELSE
+                 MOVE WS-REG-CLI-MG        TO WS-REG-CLI-UNIF
+                 PERFORM 2100-GRAVAR-CLIUNIF
+                 PERFORM 1300-LER-CLIMG
+              END-IF
+           END-IF
+           .
+       2100-GRAVAR-CLIUNIF.
+           WRITE REG-CLI-UNIF FROM WS-REG-CLI-UNIF
+           IF FS-CLIUNIF = '00'
+              ADD 1                        TO WS-CTGRAV-CLIUNIF
+           ELSE
+              MOVE 'ERRO DE GRAVACAO'      TO WS-MSG
+              MOVE FS-CLIUNIF              TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+           .
+       3000-TERMINO.
+           PERFORM 9000-IMPRIME-DATA
+           CLOSE CLISP
+           IF FS-CLISP NOT = '00'
+              MOVE 'ERRO DE FECHAMENTO DO ARQUIVO CLISP'
+                                           TO WS-MSG
+              MOVE FS-CLISP                TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
+           CLOSE CLIRJ
+           IF FS-CLIRJ NOT = '00'
+              MOVE 'ERRO DE FECHAMENTO DO ARQUIVO CLIRJ'
+                                           TO WS-MSG
+              MOVE FS-CLIRJ                TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
+           CLOSE CLIMG
+           IF FS-CLIMG NOT = '00'
+              MOVE 'ERRRO DE FECHAMENTO DO ARQUIVO CLIMG'
+                                           TO WS-MSG
+              MOVE FS-CLIMG                TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
+           CLOSE CLIUNIF
+           IF FS-CLIUNIF NOT = '00'
+              MOVE 'ERRO DE FECHAMENTO DO ARQUIVO CLIUNIF'
+                                           TO WS-MSG
+              MOVE FS-CLIUNIF              TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+           ACCEPT WS-HORARIO-FINAL FROM TIME
+
+      *VARIAVEIS DE CALCULO DE TEMPO VINDAS DA BOOKLIB
+
+           COPY CALCTEMP.
+
+           MOVE WS-CTLIDO-CLISP            TO WS-CTLIDO-CLISP-F
+           MOVE WS-CTLIDO-CLIRJ            TO WS-CTLIDO-CLIRJ-F
+           MOVE WS-CTLIDO-CLIMG            TO WS-CTLIDO-CLIMG-F
+           MOVE WS-CTGRAV-CLIUNIF          TO WS-CTGRAV-CLIUNIF-F
+           DISPLAY '=================================================='
+           DISPLAY 'TOTAL DE CLIENTES SP.................: '
+           WS-CTLIDO-CLISP-F
+           DISPLAY 'TOTAL DE CLIENTES RJ.................: '
+           WS-CTLIDO-CLIRJ-F
+           DISPLAY 'TOTAL DE CLIENTES MG.................: '
+           WS-CTLIDO-CLIMG-F
+           DISPLAY 'TOTAL DE CLIENTES UNIFICADO..........: '
+           WS-CTGRAV-CLIUNIF-F
+           DISPLAY 'TEMPO TOTAL DE PROCESSAMENTO.........: '
+           WS-TEMPO-PROCESSAMENTO-F
+           DISPLAY '=================================================='
+           DISPLAY '  TERMINO NORMAL DE PROCESSAMENTO GPXXNN04        '
+           DISPLAY '=================================================='
+           .
+      *VARIAVEIS DE ROTINA DE DATA VINDAS DA BOOKLIB
+
+           COPY ROTEDATA.
+
+      *VARIAVEIS DE ROTINA DE ERRO VINDAS DA BOOKLIB
+
+           COPY ROTERRO.

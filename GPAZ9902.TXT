@@ -1,0 +1,289 @@
+      *---------------------------------------------------------------*
+      *OBJETIVO:  ESTE PROGRAMA LE UMA SYSIN CONTENDO DADOS DE        *
+      *           EMPRESTIMOS DE CLIENTES E FAZ UMA SIMULACAO         *
+      *           CALCULANDO O VALOR DAS PARCELAS E DO TOTAL DO       *
+      *           EMPRESTIMO SIMULADO                                 *
+      *---------------------------------------------------------------*
+      *---------------------------------------------------------------*
+       IDENTIFICATION                      DIVISION.
+      *---------------------------------------------------------------*
+       PROGRAM-ID.                         GPAZ9902.
+       AUTHOR.                             KETRUS.
+       DATE-WRITTEN.                       24/05/2021.
+       DATE-COMPILED.                      26/05/2021.
+       SECURITY.                           NENHUM.
+      *---------------------------------------------------------------*
+       ENVIRONMENT                         DIVISION.
+      *---------------------------------------------------------------*
+       CONFIGURATION                       SECTION.
+       SOURCE-COMPUTER.                    NOTEMIRLA.
+       OBJECT-COMPUTER.                    NOTEMIRLA.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+       INPUT-OUTPUT                        SECTION.
+      *ESTA SESSAO FICARA VAZIA POIS ESSE ARQUIVO NAO MANIPULA ARQUIVOS
+      *---------------------------------------------------------------*
+       DATA                                DIVISION.
+      *---------------------------------------------------------------*
+       FILE                                SECTION.
+      *ESTA SESSAO FICA VAZIA POIS O PROJETO NAO MANIPULA ARQUIVOS
+       WORKING-STORAGE                     SECTION.
+      *VARIAVEIS INICIAIS
+       77  WS-VAL-PARCELA                  PIC 9(08)V99.
+       77  WS-VAL-TOTAL-EMP                PIC 9(10)V99.
+       77  WS-CTLIDO                       PIC 9(02) COMP.
+       77  WS-CTPROC                       PIC 9(02) COMP.
+       01  WS-REG-SYSIN.
+           05 WS-NUM-SIMULACAO             PIC 9(04).
+           05 WS-VAL-EMPRESTIMO            PIC 9(06)V99.
+           05 WS-JUROS                     PIC 9(02)V99.
+           05 WS-QTD-PARCELAS              PIC 9(02).
+
+       01  WS-DATA-GREGORIANA.
+           05 WS-ANO                       PIC 9(02).
+           05 WS-MES                       PIC 9(02).
+           05 WS-DIA                       PIC 9(02).
+
+
+       77  WS-NOME-MES-COMP                PIC X(08).
+
+       01  WS-DATA-JULIANA.
+           05 WS-ANO                       PIC 9(02).
+           05 WS-DIA                       PIC 9(03).
+
+       01  WS-HORARIO-INICIO.
+           05 WS-HORA-I                    PIC 9(02).
+           05 WS-MIN-I                     PIC 9(02).
+           05 WS-SEG-I                     PIC 9(02).
+           05 WS-CENT-I                    PIC 9(02).
+
+       01  WS-HORARIO-FINAL.
+           05 WS-HORA-F                    PIC 9(02).
+           05 WS-MIN-F                     PIC 9(02).
+           05 WS-SEG-F                     PIC 9(02).
+           05 WS-CENT-F                    PIC 9(02).
+
+       77  WS-DIA-DA-SEMANA                PIC 9(01).
+
+       77  WS-DIFERENCA                    PIC 9(07).
+
+       01  WS-TEMPO-PROCESSAMENTO.
+           05 WS-HORA-P                    PIC 9(02).
+           05 WS-MIN-P                     PIC 9(02).
+           05 WS-SEG-P                     PIC 9(02).
+           05 WS-CENT-P                    PIC 9(02).
+      *VARIAVEIS COM MASCARA
+       77  WS-VAL-PARCELA-F                PIC ZZ.ZZZ.ZZ9,99.
+       77  WS-VAL-TOTAL-EMP-F              PIC Z.ZZZ.ZZZ.ZZ9,99.
+       77  WS-CTLIDO-F                     PIC ZZZ9.
+       77  WS-CTPROC-F                     PIC ZZZ9.
+       01  WS-REG-SYSIN-F.
+           05 WS-NUM-SIMULACAO-F           PIC ZZZ9.
+           05 WS-VAL-EMPRESTIMO-F          PIC ZZZ.ZZ9,99.
+           05 WS-JUROS-F                   PIC Z9,99.
+           05 WS-QTD-PARCELAS-F            PIC Z9.
+
+       01  WS-DATA-GREGORIANA-F.
+           05 WS-DIA-F                     PIC 9(02).
+           05 FILLER                       PIC X(01) VALUE '/'.
+           05 WS-MES-F                     PIC 9(02).
+           05 FILLER                       PIC X(03) VALUE '/20'.
+           05 WS-ANO-F                     PIC 9(02).
+
+
+       77  WS-DIA-DA-SEMANA-F              PIC X(13).
+
+       01  WS-TEMPO-PROCESSAMENTO-F.
+           05 WS-HORA-PF                   PIC 99.
+           05 FILLER                       PIC X(01) VALUE ':'.
+           05 WS-MIN-PF                    PIC 99.
+           05 FILLER                       PIC X(01) VALUE ':'.
+           05 WS-SEG-PF                    PIC 99.
+           05 FILLER                       PIC X(01) VALUE ':'.
+           05 WS-CENT-PF                   PIC 99.
+      *---------------------------------------------------------------*
+       LINKAGE                             SECTION.
+
+      * ESTA SESSAO FICARA VAZIA POIS ESTE PROJETO NAO RECEBE VARIAVEIS
+      * DE OUTRO PROGRAMA
+      *---------------------------------------------------------------*
+       PROCEDURE                           DIVISION.
+      *---------------------------------------------------------------*
+       0000-GPAZ9901.
+           PERFORM 1000-INICIALIZAR
+           PERFORM 2000-PROCESSAR UNTIL WS-REG-SYSIN = ALL '0'
+           PERFORM 3000-TERMINO
+           STOP RUN
+           .
+       1000-INICIALIZAR.
+           ACCEPT WS-HORARIO-INICIO FROM TIME
+           MOVE 0 TO WS-CTLIDO
+                     WS-CTPROC
+           PERFORM 1500-LER-SYSIN
+           .
+       1500-LER-SYSIN.
+           ACCEPT WS-REG-SYSIN FROM SYSIN
+           IF WS-REG-SYSIN NOT = ALL '0'
+              COMPUTE WS-CTLIDO = WS-CTLIDO + 1
+           END-IF
+           .
+       2000-PROCESSAR.
+           COMPUTE WS-VAL-PARCELA = (WS-VAL-EMPRESTIMO * WS-JUROS / 100)
+                                     / (1 - 1 / (1 + WS-JUROS / 100)
+                                     ** WS-QTD-PARCELAS)
+           COMPUTE WS-VAL-TOTAL-EMP = WS-VAL-PARCELA * WS-QTD-PARCELAS
+
+           MOVE WS-NUM-SIMULACAO TO WS-NUM-SIMULACAO-F
+           MOVE WS-VAL-EMPRESTIMO TO WS-VAL-EMPRESTIMO-F
+           MOVE WS-JUROS TO WS-JUROS-F
+           MOVE WS-QTD-PARCELAS TO WS-QTD-PARCELAS-F
+           MOVE WS-VAL-PARCELA TO WS-VAL-PARCELA-F
+           MOVE WS-VAL-TOTAL-EMP TO WS-VAL-TOTAL-EMP-F
+
+           DISPLAY '**************************************************'
+           DISPLAY 'NUMERO DA SIMULACAO.....:' '                     '
+                   WS-NUM-SIMULACAO-F
+           DISPLAY 'VALOR DO EMPRESTIMO.....: R$' '            '
+                   WS-VAL-EMPRESTIMO-F
+           DISPLAY 'JUROS...................: % A.M.' '             '
+                   WS-JUROS-F
+           DISPLAY 'QTDE DE PARCELAS........:' '                       '
+                   WS-QTD-PARCELAS-F
+           DISPLAY 'VALOR DA PARCELA........: R$' '         '
+                   WS-VAL-PARCELA-F
+           DISPLAY 'VALOR TOTAL.............: R$' '      '
+                   WS-VAL-TOTAL-EMP-F
+           DISPLAY '**************************************************'
+           COMPUTE WS-CTPROC = WS-CTPROC + 1
+           PERFORM 1500-LER-SYSIN
+           .
+       3000-TERMINO.
+           PERFORM 9000-IMPRIME-DATA
+           ACCEPT WS-HORARIO-FINAL FROM TIME
+           COMPUTE WS-DIFERENCA = ( WS-HORA-F * 360000 + WS-MIN-F * 6000
+                                  + WS-SEG-F * 100 + WS-CENT-F ) -
+                                  ( WS-HORA-I * 360000 + WS-MIN-I * 6000
+                                  + WS-SEG-I * 100 + WS-CENT-I )
+           COMPUTE WS-HORA-P = WS-DIFERENCA / 360000
+           COMPUTE WS-DIFERENCA = WS-DIFERENCA - WS-HORA-P * 360000
+           COMPUTE WS-MIN-P = WS-DIFERENCA / 6000
+           COMPUTE WS-DIFERENCA = WS-DIFERENCA - WS-MIN-P * 6000
+           COMPUTE WS-SEG-P = WS-DIFERENCA / 100
+           COMPUTE WS-DIFERENCA = WS-DIFERENCA - WS-SEG-P * 100
+           COMPUTE WS-CENT-P = WS-DIFERENCA
+
+           MOVE WS-HORA-P TO WS-HORA-PF
+           MOVE WS-MIN-P TO WS-MIN-PF
+           MOVE WS-SEG-P TO WS-SEG-PF
+           MOVE WS-CENT-P TO WS-CENT-PF
+
+           MOVE WS-CTLIDO TO WS-CTLIDO-F
+           MOVE WS-CTPROC TO WS-CTPROC-F
+
+
+           DISPLAY '=================================================='
+           DISPLAY 'TOTAL DE SIMULACOES LIDAS........: ' WS-CTLIDO-F
+           DISPLAY 'TOTAL DE SIMULACOES PROCESSADAS..: ' WS-CTPROC-F
+           DISPLAY 'TEMPO TOTAL DE PROCESSAMENTO.....: '
+           WS-TEMPO-PROCESSAMENTO-F
+           DISPLAY '=================================================='
+           DISPLAY '==          TERMINO NORMAL DO GPXXNN02          =='
+           DISPLAY '=================================================='
+           .
+       9000-IMPRIME-DATA.
+           ACCEPT WS-DATA-GREGORIANA FROM DATE
+           MOVE WS-ANO OF WS-DATA-GREGORIANA TO WS-ANO-F
+           MOVE WS-MES OF WS-DATA-GREGORIANA TO WS-MES-F
+           MOVE WS-DIA OF WS-DATA-GREGORIANA TO WS-DIA-F
+           IF WS-MES = 1
+           MOVE 'JANEIRO' TO WS-NOME-MES-COMP
+           ELSE
+            IF WS-MES = 2
+            MOVE 'FEVEREIRO' TO WS-NOME-MES-COMP
+            ELSE
+             IF WS-MES = 3
+             MOVE 'MARCO' TO WS-NOME-MES-COMP
+             ELSE
+              IF WS-MES = 4
+              MOVE 'ABRIL' TO WS-NOME-MES-COMP
+              ELSE
+               IF  WS-MES = 5
+               MOVE 'MAIO' TO WS-NOME-MES-COMP
+               ELSE
+                IF  WS-MES = 6
+                MOVE 'JUNHO' TO WS-NOME-MES-COMP
+                ELSE
+                 IF  WS-MES = 7
+                 MOVE 'JULHO' TO WS-NOME-MES-COMP
+                 ELSE
+                  IF  WS-MES = 8
+                  MOVE 'AGOSTO' TO WS-NOME-MES-COMP
+                  ELSE
+                   IF  WS-MES = 9
+                   MOVE 'SETEMBRO' TO WS-NOME-MES-COMP
+                   ELSE
+                    IF  WS-MES = 10
+                    MOVE 'OUTUBRO' TO WS-NOME-MES-COMP
+                    ELSE
+                     IF  WS-MES = 11
+                     MOVE 'NOVEMBRO' TO WS-NOME-MES-COMP
+                     ELSE
+                      IF  WS-MES = 12
+                      MOVE 'DEZEMBRO' TO WS-NOME-MES-COMP
+                      END-IF
+                     END-IF
+                    END-IF
+                   END-IF
+                  END-IF
+                 END-IF
+                END-IF
+               END-IF
+              END-IF
+             END-IF
+            END-IF
+           END-IF
+
+           ACCEPT WS-DATA-JULIANA FROM DAY
+           ACCEPT WS-DIA-DA-SEMANA FROM DAY-OF-WEEK
+           IF WS-DIA-DA-SEMANA = 1
+           MOVE 'SEGUNDA-FEIRA' TO WS-DIA-DA-SEMANA-F
+           ELSE
+            IF WS-DIA-DA-SEMANA = 2
+            MOVE 'TERCA-FEIRA' TO WS-DIA-DA-SEMANA-F
+            ELSE
+             IF WS-DIA-DA-SEMANA = 3
+             MOVE 'QUARTA-FEIRA' TO WS-DIA-DA-SEMANA-F
+             ELSE
+              IF WS-DIA-DA-SEMANA = 4
+              MOVE 'QUINTA-FEIRA' TO WS-DIA-DA-SEMANA-F
+              ELSE
+               IF WS-DIA-DA-SEMANA = 5
+               MOVE 'SEXTA-FEIRA' TO WS-DIA-DA-SEMANA-F
+               ELSE
+                IF WS-DIA-DA-SEMANA = 6
+                MOVE 'SABADO' TO WS-DIA-DA-SEMANA-F
+                ELSE
+                 IF WS-DIA-DA-SEMANA = 7
+                 MOVE 'DOMINGO' TO WS-DIA-DA-SEMANA-F
+                 END-IF
+                END-IF
+               END-IF
+              END-IF
+             END-IF
+            END-IF
+           END-IF
+
+           DISPLAY '**************************************************'
+           DISPLAY '* DATA GREGORIANA 1 - ' WS-DATA-GREGORIANA-F
+                                          '                 *'
+           DISPLAY '* DATA GREGORIANA 2 - ' WS-DIA-F ' DE '
+                                            WS-NOME-MES-COMP ' DE 20'
+                                            WS-ANO-F '     *'
+           DISPLAY '* DATA JULIANA      - ' WS-DIA OF WS-DATA-JULIANA
+                                          ' DE 20' WS-ANO OF
+                                                   WS-DATA-JULIANA
+                                          '                *'
+           DISPLAY '* DIA DA SEMANA     - ' WS-DIA-DA-SEMANA-F
+                                          '              *'
+           DISPLAY '**************************************************'
+           .
